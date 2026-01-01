@@ -17,9 +17,11 @@ import monitor
 load_dotenv()
 
 # Configuração de logging
+# Em ambiente remoto, logs vão para stdout/stderr (capturados pela plataforma)
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]  # Garante que logs vão para stdout
 )
 logger = logging.getLogger(__name__)
 
@@ -28,7 +30,9 @@ API_ID = os.getenv('API_ID')
 API_HASH = os.getenv('API_HASH')
 
 if not API_ID or not API_HASH:
-    logger.error("API_ID e API_HASH devem ser configurados no arquivo .env")
+    logger.error("API_ID e API_HASH devem ser configurados!")
+    logger.error("Configure via variáveis de ambiente ou arquivo .env")
+    logger.error("Variáveis de ambiente: API_ID e API_HASH")
     exit(1)
 
 # Nome da sessão (arquivo .session será criado automaticamente)
@@ -85,6 +89,10 @@ async def main():
         @client.on(events.NewMessage(pattern=r'^/listgroups'))
         async def listgroups_handler(event):
             await commands.handle_listgroups(event)
+        
+        @client.on(events.NewMessage(pattern=r'^/listallgroups'))
+        async def listallgroups_handler(event):
+            await commands.handle_listallgroups(event)
         
         @client.on(events.NewMessage(pattern=r'^/help'))
         async def help_handler(event):

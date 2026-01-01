@@ -1,0 +1,22 @@
+# Docker Compose para testes locais
+# Use: docker-compose up
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    container_name: bot_ofertas
+    restart: unless-stopped
+    environment:
+      - API_ID=${API_ID}
+      - API_HASH=${API_HASH}
+    volumes:
+      # Persiste arquivo de sessão
+      - ./data:/app/data
+      # Persiste configuração
+      - ./config.json:/app/config.json
+    # Remove stdin_open e tty se não precisar de interação
+    # Para autenticação inicial, você pode precisar acessar o container
+    stdin_open: true
+    tty: true
+
