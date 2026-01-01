@@ -14,8 +14,8 @@ Este guia explica como fazer deploy do bot em plataformas cloud para executar 24
 
 **Vantagens:**
 - Setup muito simples
-- Volumes persistentes gratuitos
-- Preço acessível ($5/mês após créditos gratuitos)
+- Persistência automática de arquivos
+- $5 de créditos iniciais + $1/mês de créditos gratuitos
 - Deploy automático via Git
 
 **Passo a Passo:**
@@ -39,12 +39,13 @@ Este guia explica como fazer deploy do bot em plataformas cloud para executar 24
      - Build Command: (deixe vazio, Railway detecta automaticamente)
      - Start Command: `python main.py`
 
-4. **Configurar volume persistente:**
-   - Vá em "Settings" > "Volumes"
-   - Adicione um volume:
-     - Path: `/app/data`
-     - Mount Path: `/app`
-   - Isso garante que o arquivo `.session` seja mantido
+4. **Persistência de arquivos:**
+   - O Railway mantém automaticamente os arquivos no sistema de arquivos do container entre reinicializações
+   - O arquivo `.session` será salvo automaticamente no diretório de trabalho (`/app`)
+   - **Importante:** O arquivo é mantido entre reinicializações normais, mas pode ser perdido se:
+     - O serviço for completamente recriado
+     - O projeto for deletado e recriado
+   - **Dica:** Para maior segurança, faça backup periódico do arquivo `.session` ou use um serviço de armazenamento externo (opcional, mais complexo)
 
 5. **Primeira autenticação:**
    - Após o deploy, acesse "Logs"
@@ -56,7 +57,11 @@ Este guia explica como fazer deploy do bot em plataformas cloud para executar 24
    - Acesse "Logs" para ver atividade do bot
    - O bot reinicia automaticamente se cair
 
-**Custo:** $5/mês após $5 de créditos gratuitos
+**Custo:** 
+- $5 de créditos iniciais para teste (30 dias)
+- $1 de crédito mensal gratuito após o período inicial
+- Custo adicional apenas pelo uso além dos créditos gratuitos
+- Para um bot simples como este, geralmente fica dentro ou próximo dos créditos mensais ($0-2/mês)
 
 ---
 
@@ -174,16 +179,20 @@ Todas as plataformas precisam das seguintes variáveis:
 O arquivo `.session` contém a autenticação do bot. É crucial mantê-lo entre reinicializações:
 
 ### Railway
-- Configure volume em `/app/data` ou `/app`
-- O arquivo será mantido automaticamente
+- O Railway mantém automaticamente os arquivos no sistema de arquivos do container
+- O arquivo `.session` é salvo no diretório de trabalho (`/app`) e é mantido entre reinicializações normais
+- **Nota:** O arquivo pode ser perdido se o serviço for completamente recriado ou o projeto deletado
+- **Recomendação:** Para maior segurança, considere fazer backup periódico do arquivo
 
 ### Render (Paid)
 - Use Persistent Disk
 - Mount em `/app/data`
+- Configure no dashboard em "Settings" > "Persistent Disk"
 
 ### Heroku
 - Use Heroku Postgres ou addon de storage
 - Ou configure para salvar em diretório persistente
+- Considere usar addons como Heroku Redis ou serviços externos de storage
 
 ---
 
@@ -237,9 +246,11 @@ heroku logs --num 1000  # Últimas 1000 linhas
 ### Sessão perdida após reiniciar
 
 **Solução:**
-- Configure volume persistente
-- Certifique-se que o arquivo `.session` está sendo salvo
+- **Railway:** Arquivos são mantidos automaticamente. Se perdeu, pode ter sido recriado o serviço. Autentique novamente.
+- **Render (Paid):** Configure Persistent Disk em "Settings" > "Persistent Disk"
+- Certifique-se que o arquivo `.session` está sendo salvo no diretório correto
 - Verifique permissões do diretório
+- Considere fazer backup periódico do arquivo `.session`
 
 ### Bot não recebe mensagens
 
@@ -299,7 +310,7 @@ heroku logs --num 1000  # Últimas 1000 linhas
 - [ ] Conta criada na plataforma escolhida
 - [ ] Variáveis de ambiente configuradas (API_ID, API_HASH)
 - [ ] Repositório conectado (se usando Git)
-- [ ] Volume persistente configurado (para sessão)
+- [ ] Persistência configurada (Railway: automática, Render Paid: Persistent Disk)
 - [ ] Deploy realizado
 - [ ] Autenticação concluída (código de verificação)
 - [ ] Bot está rodando (verificar logs)
