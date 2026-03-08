@@ -17,26 +17,24 @@ import monitor
 load_dotenv()
 
 # Configuração de logging
-# Em ambiente remoto, logs vão para stdout/stderr (capturados pela plataforma)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler()]  # Garante que logs vão para stdout
+    handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger(__name__)
 
 # Credenciais da API do Telegram
 API_ID = os.getenv('API_ID')
 API_HASH = os.getenv('API_HASH')
+PHONE_NUMBER = os.getenv('PHONE_NUMBER')  # <- adicionado
 
 if not API_ID or not API_HASH:
     logger.error("API_ID e API_HASH devem ser configurados!")
-    logger.error("Configure via variáveis de ambiente ou arquivo .env")
-    logger.error("Variáveis de ambiente: API_ID e API_HASH")
     exit(1)
 
-# Nome da sessão (arquivo .session será criado automaticamente)
-SESSION_NAME = 'bot_ofertas_session'
+# Nome da sessão
+SESSION_NAME = os.getenv('SESSION', 'bot_ofertas_session')
 
 
 async def setup_user_id(client: TelegramClient):
@@ -50,75 +48,55 @@ async def setup_user_id(client: TelegramClient):
 
 async def main():
     """Função principal do bot."""
-    # Cria cliente Telegram
     client = TelegramClient(SESSION_NAME, int(API_ID), API_HASH)
-    
+
     try:
-        # Conecta ao Telegram
-        await client.start()
+        # Conecta ao Telegram usando PHONE_NUMBER do .env
+        await client.start(phone=PHONE_NUMBER)
         logger.info("Conectado ao Telegram com sucesso!")
-        
+
         # Configura ID do usuário
         await setup_user_id(client)
-        
-        # Registra handlers de comandos
+
+        # Handlers de comandos
         @client.on(events.NewMessage(pattern=r'^/start'))
         async def start_handler(event):
             await commands.handle_start(event)
-        
+
         @client.on(events.NewMessage(pattern=r'^/addterm'))
         async def addterm_handler(event):
             await commands.handle_addterm(event)
-        
+
         @client.on(events.NewMessage(pattern=r'^/remterm'))
         async def remterm_handler(event):
             await commands.handle_remterm(event)
-        
+
         @client.on(events.NewMessage(pattern=r'^/listterms'))
         async def listterms_handler(event):
             await commands.handle_listterms(event)
-        
+
         @client.on(events.NewMessage(pattern=r'^/addgroup'))
         async def addgroup_handler(event):
             await commands.handle_addgroup(event)
-        
+
         @client.on(events.NewMessage(pattern=r'^/remgroup'))
         async def remgroup_handler(event):
             await commands.handle_remgroup(event)
-        
+
         @client.on(events.NewMessage(pattern=r'^/listgroups'))
         async def listgroups_handler(event):
             await commands.handle_listgroups(event)
-        
+
         @client.on(events.NewMessage(pattern=r'^/listallgroups'))
         async def listallgroups_handler(event):
             await commands.handle_listallgroups(event)
-        
-        @client.on(events.NewMessage(pattern=r'^/help'))
-        async def help_handler(event):
-            await commands.handle_help(event)
-        
-        # Registra handler de monitoramento de mensagens
-        @client.on(events.NewMessage)
-        async def message_handler(event):
-            await monitor.handle_new_message(event)
-        
-        logger.info("Bot iniciado e pronto para monitorar!")
-        logger.info(f"Termos ativos: {len(config.get_search_terms())}")
-        logger.info(f"Grupos monitorados: {len(config.get_monitored_groups())}")
-        
-        # Mantém o bot rodando
+
+        # Mantém o cliente rodando
         await client.run_until_disconnected()
-        
-    except KeyboardInterrupt:
-        logger.info("Bot interrompido pelo usuário")
+
     except Exception as e:
-        logger.error(f"Erro fatal: {e}", exc_info=True)
-    finally:
-        await client.disconnect()
-        logger.info("Desconectado do Telegram")
+        logger.error(f"Erro fatal: {e}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())
-
